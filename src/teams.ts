@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { TEAMS_SECRET } from './env';
+import { TEAMS_SECRET, TEAMS_REPLY_WEBHOOK_URL } from './env';
+import fetch from 'node-fetch';
 import {
   createIssue,
   assignIssue,
@@ -26,6 +27,19 @@ function extractPlainTextFromTeams(text: string): string {
   // Remove the bot mention (e.g., 'jt-agent') at the start
   cleaned = cleaned.replace(/^jt-agent\s*/i, '');
   return cleaned;
+}
+
+async function postToTeamsChannel(message: string) {
+  if (!TEAMS_REPLY_WEBHOOK_URL) return;
+  try {
+    await fetch(TEAMS_REPLY_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: message }),
+    });
+  } catch (err) {
+    console.error('Failed to post to Teams channel:', err);
+  }
 }
 
 function parseTeamsMessage(text: string): TeamsJiraAction | null {
@@ -74,15 +88,18 @@ export async function handleTeamsWebhook(req: Request, res: Response) {
   console.log('Raw Teams webhook body:', req.body);
   console.log('Headers:', req.headers);
 
-  const provided = req.headers['x-teams-secret'] || req.query.secret;
-  if (!TEAMS_SECRET || provided !== TEAMS_SECRET) {
-    return res.status(401).send('Unauthorized');
-  }
+  // const provided = req.headers['x-teams-secret'] || req.query.secret;
+  // if (!TEAMS_SECRET || provided !== TEAMS_SECRET) {
+  //   return res.status(401).send('Unauthorized');
+  // }
   const rawText = req.body.text || '';
   const text = extractPlainTextFromTeams(rawText);
   console.log('Cleaned Teams text:', text);
   const parsed = parseTeamsMessage(text);
   console.log('Received Teams webhook:', { rawText, text, parsed });
+
+  // Always send a dummy reply to the Teams channel
+  await postToTeamsChannel('✅ Received your request!');
 
   if (!parsed) {
     return res.status(200).send('Could not parse action.');
