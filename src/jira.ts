@@ -124,10 +124,11 @@ export async function commentOnIssue({ issue, comment }: { issue: string, commen
   }
 }
 
-export async function getMyUpdates({ project, since }: { project: string, since: string }) {
-  // For MVP: fetch issues updated by the current user in the project since the given time
+export async function getMyUpdates({ project, since, user }: { project: string, since: string, user?: string }) {
+  // For MVP: fetch issues updated by the specified user (or current user) in the project since the given time
   // since: e.g. '-1d' (use JQL updated >= -1d)
-  const jql = `project = ${project} AND updated >= ${since} AND assignee = currentUser()`;
+  const assignee = user ? `"${user}"` : 'currentUser()';
+  const jql = `project = ${project} AND updated >= ${since} AND assignee = ${assignee}`;
   const url = `${JIRA_BASE_URL}/rest/api/3/search?jql=${encodeURIComponent(jql)}`;
   try {
     const res = await fetch(url, {

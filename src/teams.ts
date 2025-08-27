@@ -14,7 +14,7 @@ export type TeamsJiraAction =
   | { type: 'assign', project: string, issue: string, assignee: string }
   | { type: 'transition', project: string, issue: string, status: string }
   | { type: 'comment', project: string, issue: string, comment: string }
-  | { type: 'updates', project: string, since: string };
+  | { type: 'updates', project: string, since: string, user?: string };
 
 function parseTeamsMessage(text: string): TeamsJiraAction | null {
   // Very basic parsing for MVP
@@ -42,13 +42,17 @@ function parseTeamsMessage(text: string): TeamsJiraAction | null {
   const commentMatch = text.match(/^comment (\w+-\d+): "([^"]+)"/i);
   if (commentMatch) {
     const [project] = commentMatch[1].split('-');
-    return { type: 'comment', project, issue: commentMatch[1], comment: commentMatch[2] };
+    return { type: 'comment', project: commentMatch[1], comment: commentMatch[2], issue: commentMatch[1] };
   }
-  const updatesMatch = text.match(/^my updates since (.+)/i);
+  // Updated regex for updates with optional user
+  const updatesMatch = text.match(/^my updates since (.+) in (\w+)(?: for (@\w+))?/i);
   if (updatesMatch) {
-    // For MVP, require project mention elsewhere in the message
-    const projectMatch = text.match(/in (\w+)/i);
-    return projectMatch ? { type: 'updates', project: projectMatch[1], since: updatesMatch[1] } : null;
+    return {
+      type: 'updates',
+      since: updatesMatch[1],
+      project: updatesMatch[2],
+      user: updatesMatch[3] ? updatesMatch[3].replace(/^@/, '') : undefined,
+    };
   }
   return null;
 }
