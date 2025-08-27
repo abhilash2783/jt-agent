@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { TEAMS_SECRET } from './env';
 import {
   createIssue,
   assignIssue,
@@ -53,7 +54,10 @@ function parseTeamsMessage(text: string): TeamsJiraAction | null {
 }
 
 export async function handleTeamsWebhook(req: Request, res: Response) {
-  // Authentication is disabled for now. (Was: TEAMS_SECRET check)
+  const provided = req.headers['x-teams-secret'] || req.query.secret;
+  if (!TEAMS_SECRET || provided !== TEAMS_SECRET) {
+    return res.status(401).send('Unauthorized');
+  }
   const text = req.body.text || '';
   const parsed = parseTeamsMessage(text);
   console.log('Received Teams webhook:', { text, parsed });
