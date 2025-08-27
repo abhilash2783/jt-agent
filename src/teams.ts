@@ -16,6 +16,18 @@ export type TeamsJiraAction =
   | { type: 'comment', project: string, issue: string, comment: string }
   | { type: 'updates', project: string, since: string, user?: string };
 
+function extractPlainTextFromTeams(text: string): string {
+  // Remove all HTML tags
+  let cleaned = text.replace(/<[^>]+>/g, '');
+  // Replace &nbsp; with space
+  cleaned = cleaned.replace(/&nbsp;/g, ' ');
+  // Remove leading/trailing whitespace
+  cleaned = cleaned.trim();
+  // Remove the bot mention (e.g., 'jt-agent') at the start
+  cleaned = cleaned.replace(/^jt-agent\s*/i, '');
+  return cleaned;
+}
+
 function parseTeamsMessage(text: string): TeamsJiraAction | null {
   // Very basic parsing for MVP
   const createMatch = text.match(/^create ticket in (\w+): "([^"]+)"(?: priority (\w+))?(?: assignee (@\w+))?(?: AC: (.+))?/i);
@@ -66,9 +78,11 @@ export async function handleTeamsWebhook(req: Request, res: Response) {
   if (!TEAMS_SECRET || provided !== TEAMS_SECRET) {
     return res.status(401).send('Unauthorized');
   }
-  const text = req.body.text || '';
+  const rawText = req.body.text || '';
+  const text = extractPlainTextFromTeams(rawText);
+  console.log('Cleaned Teams text:', text);
   const parsed = parseTeamsMessage(text);
-  console.log('Received Teams webhook:', { text, parsed });
+  console.log('Received Teams webhook:', { rawText, text, parsed });
 
   if (!parsed) {
     return res.status(200).send('Could not parse action.');
