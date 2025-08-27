@@ -58,6 +58,10 @@ function parseTeamsMessage(text: string): TeamsJiraAction | null {
 }
 
 export async function handleTeamsWebhook(req: Request, res: Response) {
+  // Debug: log raw body and headers
+  console.log('Raw Teams webhook body:', req.body);
+  console.log('Headers:', req.headers);
+
   const provided = req.headers['x-teams-secret'] || req.query.secret;
   if (!TEAMS_SECRET || provided !== TEAMS_SECRET) {
     return res.status(401).send('Unauthorized');
