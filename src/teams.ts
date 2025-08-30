@@ -53,7 +53,7 @@ async function postToTeamsChannel(message: string) {
 
 function parseTeamsMessage(text: string): TeamsJiraAction | null {
   // Very basic parsing for MVP
-  const createMatch = text.match(/^create ticket in (\w+): "([^"]+)"(?: priority (\w+))?(?: assignee (@\w+))?(?: AC: (.+))?/i);
+  const createMatch = text.match(/^create ticket in (\w+): "([^"]+)"(?: priority (\w+))?(?: assignee @?([^\s]+))?(?: AC: (.+))?/i);
   if (createMatch) {
     return {
       type: 'create',
@@ -64,7 +64,7 @@ function parseTeamsMessage(text: string): TeamsJiraAction | null {
       ac: createMatch[5],
     };
   }
-  const assignMatch = text.match(/^assign (\w+-\d+) to (@\w+)/i);
+  const assignMatch = text.match(/^assign (\w+-\d+) to @?([^\s]+)/i);
   if (assignMatch) {
     const [project] = assignMatch[1].split('-');
     return { type: 'assign', project, issue: assignMatch[1], assignee: assignMatch[2] };
@@ -80,13 +80,13 @@ function parseTeamsMessage(text: string): TeamsJiraAction | null {
     return { type: 'comment', project: commentMatch[1], comment: commentMatch[2], issue: commentMatch[1] };
   }
   // Updated regex for updates with optional user
-  const updatesMatch = text.match(/^my updates since (.+) in (\w+)(?: for (@\w+))?/i);
+  const updatesMatch = text.match(/^my updates since (.+) in (\w+)(?: for @?([^\s]+))?/i);
   if (updatesMatch) {
     return {
       type: 'updates',
       since: updatesMatch[1],
       project: updatesMatch[2],
-      user: updatesMatch[3] ? updatesMatch[3].replace(/^@/, '') : undefined,
+      user: updatesMatch[3],
     };
   }
   return null;
