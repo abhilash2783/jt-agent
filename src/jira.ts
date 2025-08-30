@@ -29,11 +29,15 @@ export async function createIssue({ project, summary, priority, assignee, ac }: 
   project: string, summary: string, priority?: string, assignee?: string, ac?: string
 }) {
   const url = `${JIRA_BASE_URL}/rest/api/3/issue`;
+  // Calculate due date: 3 days from now
+  const dueDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const body: any = {
     fields: {
       project: { key: project },
       summary,
       issuetype: { name: 'Task' },
+      duedate: dueDate,
+      customfield_10016: 1, // Story point estimate (set to 1 for now)
     },
   };
   if (priority) body.fields.priority = { name: priority };
