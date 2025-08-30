@@ -28,6 +28,7 @@ function getAuthHeaders() {
 export async function createIssue({ project, summary, priority, assignee, ac }: {
   project: string, summary: string, priority?: string, assignee?: string, ac?: string
 }) {
+  console.log("kjjhbhjb")
   const url = `${JIRA_BASE_URL}/rest/api/3/issue`;
   // Calculate due date: 3 days from now
   const dueDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];

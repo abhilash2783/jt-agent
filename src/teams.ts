@@ -29,6 +29,15 @@ function extractPlainTextFromTeams(text: string): string {
   return cleaned;
 }
 
+function decodeHtmlEntities(text: string): string {
+  return text.replace(/&quot;/g, '"')
+             .replace(/&amp;/g, '&')
+             .replace(/&lt;/g, '<')
+             .replace(/&gt;/g, '>')
+             .replace(/&#39;/g, "'")
+             .replace(/&nbsp;/g, ' ');
+}
+
 async function postToTeamsChannel(message: string) {
   if (!TEAMS_REPLY_WEBHOOK_URL) return;
   try {
@@ -93,8 +102,9 @@ export async function handleTeamsWebhook(req: Request, res: Response) {
   //   return res.status(401).send('Unauthorized');
   // }
   const rawText = req.body.text || '';
-  const text = extractPlainTextFromTeams(rawText);
-  console.log('Cleaned Teams text:', text);
+  let text = extractPlainTextFromTeams(rawText);
+  text = decodeHtmlEntities(text);
+  console.log('Cleaned and decoded Teams text:', text);
   const parsed = parseTeamsMessage(text);
   console.log('Received Teams webhook:', { rawText, text, parsed });
 
